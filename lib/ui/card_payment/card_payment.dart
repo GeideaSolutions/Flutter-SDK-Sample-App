@@ -110,139 +110,133 @@ class CardPaymentState extends State<CardPayment> {
       appBar: AppBar(
         title: const Text("Card Payment"),
       ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(30),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _amountController,
-                                  keyboardType: TextInputType.number,
-                                  textInputAction: TextInputAction.done,
-                                  decoration: const InputDecoration(
-                                      floatingLabelBehavior:
-                                          FloatingLabelBehavior.auto,
-                                      border: OutlineInputBorder(),
-                                      labelText: "Amount *"),
-                                ),
+      body: Form(
+        key: _formKey,
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(30),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _amountController,
+                                keyboardType: TextInputType.number,
+                                textInputAction: TextInputAction.done,
+                                decoration: const InputDecoration(
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.auto,
+                                    border: OutlineInputBorder(),
+                                    labelText: "Amount *"),
                               ),
-                              const SizedBox(
-                                width: 30,
-                              ),
-                              Text(
-                                _currency,
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          ListTile(
-                            title: const Text("Geidea SDK"),
-                            leading: Radio(
-                                value: PaymentType.geidea,
-                                groupValue: _character,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _character = value;
-                                    value.addPrefData(keyPaymentType);
-                                  });
-                                }),
-                            contentPadding: const EdgeInsets.only(left: -100),
-                            onTap: () {
-                              setState(() {
-                                _character = PaymentType.geidea;
-                                PaymentType.geidea.addPrefData(keyPaymentType);
-                              });
-                            },
-                          ),
-                          ListTile(
-                            title: const Text("Merchant PCI-DSS"),
-                            leading: Radio(
-                                value: PaymentType.merchant,
-                                groupValue: _character,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _character = value;
-                                    value.addPrefData(keyPaymentType);
-                                  });
-                                }),
-                            contentPadding: const EdgeInsets.all(0),
-                            onTap: () {
-                              setState(() {
-                                _character = PaymentType.merchant;
-                                PaymentType.merchant
-                                    .addPrefData(keyPaymentType);
-                              });
-                            },
-                          ),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 500),
-                            child: (_character == PaymentType.merchant)
-                                ? InputCardView(
-                                    cardNumberController: _cardNumberController,
-                                    monthController: _monthController,
-                                    yearController: _yearController,
-                                    cvvController: _cvvController,
-                                    cardHolderController: _cardHolderController,
-                                  )
-                                : Container(),
-                          ),
-                        ],
-                      ),
+                            ),
+                            const SizedBox(
+                              width: 30,
+                            ),
+                            Text(
+                              _currency,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 20,
+                        ),
+                        ListTile(
+                          title: const Text("Geidea SDK"),
+                          leading: Radio(
+                              value: PaymentType.geidea,
+                              groupValue: _character,
+                              onChanged: (PaymentType? value) {
+                                setState(() {
+                                  _character = value;
+                                  value.addPrefData(keyPaymentType);
+                                });
+                              }),
+                          contentPadding: const EdgeInsets.only(left: -100),
+                          onTap: () {
+                            setState(() {
+                              _character = PaymentType.geidea;
+                              PaymentType.geidea.addPrefData(keyPaymentType);
+                            });
+                          },
+                        ),
+                        ListTile(
+                          title: const Text("Merchant PCI-DSS"),
+                          leading: Radio(
+                              value: PaymentType.merchant,
+                              groupValue: _character,
+                              onChanged: (PaymentType? value) {
+                                setState(() {
+                                  _character = value;
+                                  value.addPrefData(keyPaymentType);
+                                });
+                              }),
+                          contentPadding: const EdgeInsets.all(0),
+                          onTap: () {
+                            setState(() {
+                              _character = PaymentType.merchant;
+                              PaymentType.merchant.addPrefData(keyPaymentType);
+                            });
+                          },
+                        ),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 500),
+                          child: (_character == PaymentType.merchant)
+                              ? InputCardView(
+                                  cardNumberController: _cardNumberController,
+                                  monthController: _monthController,
+                                  yearController: _yearController,
+                                  cvvController: _cvvController,
+                                  cardHolderController: _cardHolderController,
+                                )
+                              : Container(),
+                        ),
+                      ],
                     ),
                   ),
-                  Builder(builder: (context) {
-                    return Column(children: [
-                      if (_character == PaymentType.geidea)
-                        ElevatedButton(
-                          onPressed: () => _payNow(context),
-                          child: const Center(
-                            child: Text("PAY"),
-                          ),
+                ),
+                Builder(builder: (context) {
+                  return Column(children: [
+                    if (_character == PaymentType.geidea)
+                      ElevatedButton(
+                        onPressed: () => _payNow(context),
+                        child: const Center(
+                          child: Text("PAY"),
                         ),
-                      if (_character == PaymentType.merchant)
-                        _getPlatformButton('initiate authentication',
-                            () => _handleInitAuth(context), true),
-                      if (_character == PaymentType.merchant)
-                        _getPlatformButton('Payer authentication',
-                            () => _handlePayerAuth(context), _orderId != null),
-                      if (_character == PaymentType.merchant)
-                        _getPlatformButton(
-                            'Pay with card',
-                            () => _handlePayCard(context),
-                            _orderId != null && _threeDSecureId != null),
-                      if (_character == PaymentType.merchant)
-                        _getPlatformButton(
-                            'Refund',
-                            () => _handleRefund(context),
-                            orderApiResponse != null && _orderId != null),
-                    ]);
-                  }),
-                ],
-              ),
-              _checkoutInProgress
-                  ? Container(
-                      color: Colors.black.withOpacity(0.5),
-                      child: const Center(
-                        child: CircularProgressIndicator(),
                       ),
-                    )
-                  : Container()
-            ],
-          ),
+                    if (_character == PaymentType.merchant)
+                      _getPlatformButton('initiate authentication',
+                          () => _handleInitAuth(context), true),
+                    if (_character == PaymentType.merchant)
+                      _getPlatformButton('Payer authentication',
+                          () => _handlePayerAuth(context), _orderId != null),
+                    if (_character == PaymentType.merchant)
+                      _getPlatformButton(
+                          'Pay with card',
+                          () => _handlePayCard(context),
+                          _orderId != null && _threeDSecureId != null),
+                    if (_character == PaymentType.merchant)
+                      _getPlatformButton('Refund', () => _handleRefund(context),
+                          orderApiResponse != null && _orderId != null),
+                  ]);
+                }),
+              ],
+            ),
+            _checkoutInProgress
+                ? Container(
+                    color: Colors.black.withOpacity(0.5),
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : Container()
+          ],
         ),
       ),
     );

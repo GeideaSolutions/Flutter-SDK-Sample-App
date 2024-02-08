@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.3 <4.0.0"
+  sdk: ">=2.17.6 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -31,17 +31,18 @@ dependencies:
     sdk: flutter
 
   geideapay:
+#    path: ./../flutter_sdk/
     git:
       url: https://github.com/payorch/flutter_sdk.git
-      ref: main # branch name
+      ref: flutter_downgrade_to_3.0.5 # branch name
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   mask_text_input_formatter: ^2.4.0
-  shared_preferences: ^2.1.2
+  shared_preferences: ^2.1.1
   dropdown_button2: ^2.1.3
-  flex_color_picker: ^3.2.2
+  flex_color_picker: ^2.1.2
 
 dev_dependencies:
   flutter_test:

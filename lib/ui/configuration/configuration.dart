@@ -146,9 +146,7 @@ class ConfigurationState extends State<Configuration> {
       appBar: AppBar(
         title: const Text("Configuration"),
       ),
-      body: SafeArea(
-        child: _body(),
-      ),
+      body: _body(),
     );
   }
 
@@ -335,6 +333,7 @@ class ConfigurationState extends State<Configuration> {
           child: Center(
             child: Text("Save".toUpperCase()),
           ),
+
         ),
     ]);
   }
@@ -467,19 +466,19 @@ class ConfigurationState extends State<Configuration> {
     ).showPickerDialog(
       context,
       // New in version 3.0.0 custom transitions support.
-      transitionBuilder: (BuildContext context, Animation<double> a1,
-          Animation<double> a2, Widget widget) {
-        final double curvedValue =
-            Curves.easeInOutBack.transform(a1.value) - 1.0;
-        return Transform(
-          transform: Matrix4.translationValues(0.0, curvedValue * 200, 0.0),
-          child: Opacity(
-            opacity: a1.value,
-            child: widget,
-          ),
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 400),
+      // transitionBuilder: (BuildContext context, Animation<double> a1,
+      //     Animation<double> a2, Widget widget) {
+      //   final double curvedValue =
+      //       Curves.easeInOutBack.transform(a1.value) - 1.0;
+      //   return Transform(
+      //     transform: Matrix4.translationValues(0.0, curvedValue * 200, 0.0),
+      //     child: Opacity(
+      //       opacity: a1.value,
+      //       child: widget,
+      //     ),
+      //   );
+      // },
+      // transitionDuration: const Duration(milliseconds: 400),
       constraints:
           const BoxConstraints(minHeight: 460, minWidth: 300, maxWidth: 320),
     );
