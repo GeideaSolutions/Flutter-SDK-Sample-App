@@ -42,6 +42,7 @@ class CardPaymentState extends State<CardPayment> {
   bool _checkoutInProgress = false;
 
   String _callbackUrl = "https://returnurl.com";
+  String _returnUrl = "https://returnurl.com";
 
   String? _orderId;
 
@@ -62,9 +63,9 @@ class CardPaymentState extends State<CardPayment> {
         publicKey: globals.keyMerchantKey ?? "",
         apiPassword: globals.keyMerchantPass ?? "");
 
-    _currency =
-        await keyCurrency.getPrefData() ?? "";
+    _currency = await keyCurrency.getPrefData() ?? "";
     _callbackUrl = await keyCallbackUrl.getPrefData() ?? _callbackUrl;
+    _returnUrl = await keyReturnUrl.getPrefData() ?? _returnUrl;
 
     _amountController.text =
         await keyAmount.getPrefData() ?? await "100".addPrefData(keyAmount);
@@ -259,6 +260,7 @@ class CardPaymentState extends State<CardPayment> {
       (await keyAmount.getPrefData()).toString(),
       (await keyCurrency.getPrefData()).toString(),
       callbackUrl: await keyCallbackUrl.getPrefData() ?? "",
+      returnUrl: await keyReturnUrl.getPrefData() ?? "",
       lang: await keySdkLanguage.getPrefData() ?? "AR",
       billingAddress: billingAddress,
       shippingAddress: shippingAddress,

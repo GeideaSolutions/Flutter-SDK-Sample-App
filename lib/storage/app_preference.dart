@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const String keySdkLanguage = "keySdkLanguage";
 const String keyCurrency = "keyCurrency";
 const String keyCallbackUrl = "keyCallbackUrl";
+const String keyReturnUrl = "keyReturnUrl";
 const String keyShowEmail = "keyShowEmail";
 const String keyShowAddress = "keyShowAddress";
 const String keyMerchantRefId = "keyMerchantRefId";
