@@ -1,5 +1,6 @@
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:test_app/ui/configuration/includes/drop_down.dart';
 import '../../storage/app_preference.dart';
 import 'includes/address.dart';
 import 'includes/payment_detail.dart';
@@ -31,6 +32,15 @@ class ConfigurationState extends State<Configuration> {
     'AuthorizeCapture'
   ];
 
+  final Map<String, String> _baseUrlType = {
+    "Egypt - Production": "https://api.merchant.geidea.net",
+    "Egypt - Preproduction": "https://api-merchant.staging.geidea.net",
+    "UAE - Production": "https://api.merchant.geidea.ae",
+    "UAE - Preproduction": "https://api-merchant.staging.geidea.ae",
+    "KSA - Production": "https://api.ksamerchant.geidea.net",
+    "KSA - Preproduction": "https://api-ksamerchant.staging.geidea.net",
+  };
+
   final TextEditingController _merchantKeyController = TextEditingController();
   final TextEditingController _merchantPasswordController =
       TextEditingController();
@@ -52,7 +62,7 @@ class ConfigurationState extends State<Configuration> {
   final TextEditingController _shippingCountryCode = TextEditingController();
   final TextEditingController _shippingPostalCode = TextEditingController();
 
-  String _savedPaymentOperation = "";
+  String _savedPaymentOperation = "Default (merchant configuration)";
 
   bool _shippingSameAsBilling = false;
 
@@ -149,7 +159,9 @@ class ConfigurationState extends State<Configuration> {
       appBar: AppBar(
         title: const Text("Configuration"),
       ),
-      body: _body(),
+      body: SafeArea(
+        child: _body(),
+      ),
     );
   }
 
@@ -331,13 +343,13 @@ class ConfigurationState extends State<Configuration> {
         ),
       ),
       if (globals.keyMerchantKey?.isNotEmpty == true &&
-          globals.keyMerchantPass?.isNotEmpty == true)
+          globals.keyMerchantPass?.isNotEmpty == true &&
+          globals.keyBaseUrl?.isNotEmpty == true)
         ElevatedButton(
           onPressed: () => _saveData(),
           child: Center(
             child: Text("Save".toUpperCase()),
           ),
-
         ),
     ]);
   }
@@ -347,6 +359,20 @@ class ConfigurationState extends State<Configuration> {
       padding: const EdgeInsets.only(left: 60, right: 60, top: 20),
       child: Column(
         children: [
+          MyDropDown(
+            hint: "Select environment",
+            initialValue: _baseUrlType.entries
+                .firstWhere(
+                    (element) => element.value == globals.keyBaseUrl.toString(),
+                    orElse: () => _baseUrlType.entries.first)
+                .key,
+            items: _baseUrlType.entries.map((e) => e.key).toList(),
+            keyPref: "",
+            onChange: (value) {
+              globals.keyBaseUrl = _baseUrlType[value];
+            },
+          ),
+          _verticalSizeBox,
           TextFormField(
             controller: _merchantKeyController,
             keyboardType: TextInputType.text,

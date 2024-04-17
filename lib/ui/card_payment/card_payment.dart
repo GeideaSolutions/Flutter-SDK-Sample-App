@@ -1,14 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:geideapay/api/request/initiate_authentication_request_body.dart';
-import 'package:geideapay/api/request/pay_direct_request_body.dart';
-import 'package:geideapay/api/request/payer_authentication_request_body.dart';
-import 'package:geideapay/api/request/refund_request_body.dart';
-import 'package:geideapay/api/response/authentication_api_response.dart';
 import 'package:geideapay/geideapay.dart';
-import 'package:geideapay/models/address.dart';
-import 'package:geideapay/widgets/checkout/checkout_options.dart';
+import 'package:intl/intl.dart';
 import '../../storage/app_preference.dart';
 import 'input_card_view.dart';
 import '../../utils/HexColor.dart';
@@ -44,7 +39,7 @@ class CardPaymentState extends State<CardPayment> {
   String _callbackUrl = "https://returnurl.com";
   String _returnUrl = "https://returnurl.com";
 
-  String? _orderId;
+  String? _orderId, _sessionId;
 
   String? _threeDSecureId;
 
@@ -61,7 +56,8 @@ class CardPaymentState extends State<CardPayment> {
   void _setData() async {
     _plugin.initialize(
         publicKey: globals.keyMerchantKey ?? "",
-        apiPassword: globals.keyMerchantPass ?? "");
+        apiPassword: globals.keyMerchantPass ?? "",
+        baseUrl: globals.keyBaseUrl ?? "");
 
     _currency = await keyCurrency.getPrefData() ?? "";
     _callbackUrl = await keyCallbackUrl.getPrefData() ?? _callbackUrl;
@@ -111,133 +107,142 @@ class CardPaymentState extends State<CardPayment> {
       appBar: AppBar(
         title: const Text("Card Payment"),
       ),
-      body: Form(
-        key: _formKey,
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(30),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _amountController,
-                                keyboardType: TextInputType.number,
-                                textInputAction: TextInputAction.done,
-                                decoration: const InputDecoration(
-                                    floatingLabelBehavior:
-                                        FloatingLabelBehavior.auto,
-                                    border: OutlineInputBorder(),
-                                    labelText: "Amount *"),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(30),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _amountController,
+                                  keyboardType: TextInputType.number,
+                                  textInputAction: TextInputAction.done,
+                                  decoration: const InputDecoration(
+                                      floatingLabelBehavior:
+                                          FloatingLabelBehavior.auto,
+                                      border: OutlineInputBorder(),
+                                      labelText: "Amount *"),
+                                ),
                               ),
-                            ),
-                            const SizedBox(
-                              width: 30,
-                            ),
-                            Text(
-                              _currency,
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        ListTile(
-                          title: const Text("Geidea SDK"),
-                          leading: Radio(
-                              value: PaymentType.geidea,
-                              groupValue: _character,
-                              onChanged: (PaymentType? value) {
-                                setState(() {
-                                  _character = value;
-                                  value.addPrefData(keyPaymentType);
-                                });
-                              }),
-                          contentPadding: const EdgeInsets.only(left: -100),
-                          onTap: () {
-                            setState(() {
-                              _character = PaymentType.geidea;
-                              PaymentType.geidea.addPrefData(keyPaymentType);
-                            });
-                          },
-                        ),
-                        ListTile(
-                          title: const Text("Merchant PCI-DSS"),
-                          leading: Radio(
-                              value: PaymentType.merchant,
-                              groupValue: _character,
-                              onChanged: (PaymentType? value) {
-                                setState(() {
-                                  _character = value;
-                                  value.addPrefData(keyPaymentType);
-                                });
-                              }),
-                          contentPadding: const EdgeInsets.all(0),
-                          onTap: () {
-                            setState(() {
-                              _character = PaymentType.merchant;
-                              PaymentType.merchant.addPrefData(keyPaymentType);
-                            });
-                          },
-                        ),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 500),
-                          child: (_character == PaymentType.merchant)
-                              ? InputCardView(
-                                  cardNumberController: _cardNumberController,
-                                  monthController: _monthController,
-                                  yearController: _yearController,
-                                  cvvController: _cvvController,
-                                  cardHolderController: _cardHolderController,
-                                )
-                              : Container(),
-                        ),
-                      ],
+                              const SizedBox(
+                                width: 30,
+                              ),
+                              Text(
+                                _currency,
+                                style:
+                                    Theme.of(context).textTheme.headlineSmall,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          ListTile(
+                            title: const Text("Geidea SDK"),
+                            leading: Radio(
+                                value: PaymentType.geidea,
+                                groupValue: _character,
+                                onChanged: (PaymentType? value) {
+                                  setState(() {
+                                    _character = value;
+                                    value.addPrefData(keyPaymentType);
+                                  });
+                                }),
+                            contentPadding: const EdgeInsets.only(left: -100),
+                            onTap: () {
+                              setState(() {
+                                _character = PaymentType.geidea;
+                                PaymentType.geidea.addPrefData(keyPaymentType);
+                              });
+                            },
+                          ),
+                          ListTile(
+                            title: const Text("Merchant PCI-DSS"),
+                            leading: Radio(
+                                value: PaymentType.merchant,
+                                groupValue: _character,
+                                onChanged: (PaymentType? value) {
+                                  setState(() {
+                                    _character = value;
+                                    value.addPrefData(keyPaymentType);
+                                  });
+                                }),
+                            contentPadding: const EdgeInsets.all(0),
+                            onTap: () {
+                              setState(() {
+                                _character = PaymentType.merchant;
+                                PaymentType.merchant
+                                    .addPrefData(keyPaymentType);
+                              });
+                            },
+                          ),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 500),
+                            child: (_character == PaymentType.merchant)
+                                ? InputCardView(
+                                    cardNumberController: _cardNumberController,
+                                    monthController: _monthController,
+                                    yearController: _yearController,
+                                    cvvController: _cvvController,
+                                    cardHolderController: _cardHolderController,
+                                  )
+                                : Container(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                Builder(builder: (context) {
-                  return Column(children: [
-                    if (_character == PaymentType.geidea)
-                      ElevatedButton(
-                        onPressed: () => _payNow(context),
-                        child: const Center(
-                          child: Text("PAY"),
+                  Builder(builder: (context) {
+                    return Column(children: [
+                      if (_character == PaymentType.geidea)
+                        ElevatedButton(
+                          onPressed: () => _payNow(context),
+                          child: const Center(
+                            child: Text("PAY"),
+                          ),
                         ),
+                      if (_character == PaymentType.merchant)
+                        _getPlatformButton('Create Session',
+                            () => _handleCreateSession(context), true),
+                      if (_character == PaymentType.merchant)
+                        _getPlatformButton('initiate authentication',
+                            () => _handleInitAuth(context), _sessionId != null),
+                      if (_character == PaymentType.merchant)
+                        _getPlatformButton('Payer authentication',
+                            () => _handlePayerAuth(context), _orderId != null),
+                      if (_character == PaymentType.merchant)
+                        _getPlatformButton(
+                            'Pay with card',
+                            () => _handlePayCard(context),
+                            _orderId != null && _threeDSecureId != null),
+                      if (_character == PaymentType.merchant)
+                        _getPlatformButton(
+                            'Refund',
+                            () => _handleRefund(context),
+                            orderApiResponse != null && _orderId != null),
+                    ]);
+                  }),
+                ],
+              ),
+              _checkoutInProgress
+                  ? Container(
+                      color: Colors.black.withOpacity(0.5),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
                       ),
-                    if (_character == PaymentType.merchant)
-                      _getPlatformButton('initiate authentication',
-                          () => _handleInitAuth(context), true),
-                    if (_character == PaymentType.merchant)
-                      _getPlatformButton('Payer authentication',
-                          () => _handlePayerAuth(context), _orderId != null),
-                    if (_character == PaymentType.merchant)
-                      _getPlatformButton(
-                          'Pay with card',
-                          () => _handlePayCard(context),
-                          _orderId != null && _threeDSecureId != null),
-                    if (_character == PaymentType.merchant)
-                      _getPlatformButton('Refund', () => _handleRefund(context),
-                          orderApiResponse != null && _orderId != null),
-                  ]);
-                }),
-              ],
-            ),
-            _checkoutInProgress
-                ? Container(
-                    color: Colors.black.withOpacity(0.5),
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : Container()
-          ],
+                    )
+                  : Container()
+            ],
+          ),
         ),
       ),
     );
@@ -257,11 +262,11 @@ class CardPaymentState extends State<CardPayment> {
         postCode: await keyShippingPostalCode.getPrefData());
 
     CheckoutOptions checkoutOptions = CheckoutOptions(
-      (await keyAmount.getPrefData()).toString(),
+      double.parse((await keyAmount.getPrefData()).toString()),
       (await keyCurrency.getPrefData()).toString(),
       callbackUrl: await keyCallbackUrl.getPrefData() ?? "",
       returnUrl: await keyReturnUrl.getPrefData() ?? "",
-      lang: await keySdkLanguage.getPrefData() ?? "AR",
+      lang: (await keySdkLanguage.getPrefData() ?? "AR").toLowerCase(),
       billingAddress: billingAddress,
       shippingAddress: shippingAddress,
       customerEmail: await keyCustomerEmail.getPrefData(),
@@ -300,6 +305,53 @@ class CardPaymentState extends State<CardPayment> {
     }
   }
 
+  _handleCreateSession(BuildContext context) async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _checkoutInProgress = true);
+      _formKey.currentState?.save();
+
+      String timeStamp =
+          DateFormat('MM/dd/yyyy hh:mm:ss a').format(DateTime.now());
+
+      DirectSessionRequestBody directSessionRequestBody =
+          DirectSessionRequestBody(
+        double.parse(_amountController.text),
+        _currency,
+        timeStamp,
+        (await keyMerchantRefId.getPrefData()).toString(),
+        Utils.generateSignature(
+            globals.keyMerchantKey ?? "",
+            double.parse(_amountController.text),
+            _currency,
+            (await keyMerchantRefId.getPrefData()).toString(),
+            globals.keyMerchantPass ?? "",
+            timeStamp),
+        callbackUrl: _callbackUrl,
+        paymentIntentId: null,
+        paymentOperation: await keyPaymentOperation.getPrefData(),
+        language: (await keySdkLanguage.getPrefData() ?? "AR").toLowerCase(),
+        appearance: Appearance(
+          showEmail: await keyShowEmail.getPrefData() == "true",
+          showAddress: await keyShowAddress.getPrefData() == "true",
+        ),
+      );
+
+      try {
+        DirectSessionApiResponse response = await _plugin.createSession(
+            directSessionRequestBody: directSessionRequestBody);
+        debugPrint('Response = $response');
+        setState(() => _checkoutInProgress = false);
+        _sessionId = response.session?.id;
+        _updateStatus(
+            response.detailedResponseMessage, truncate(response.toString()));
+      } catch (e) {
+        setState(() => _checkoutInProgress = false);
+        _showMessage("Check console for error");
+        rethrow;
+      }
+    }
+  }
+
   _handleInitAuth(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       setState(() => _checkoutInProgress = true);
@@ -309,8 +361,11 @@ class CardPaymentState extends State<CardPayment> {
 
       InitiateAuthenticationRequestBody initiateAuthenticationRequestBody =
           InitiateAuthenticationRequestBody(
-              _amountController.text, _currency, card?.number,
-              callbackUrl: _callbackUrl, cardOnFile: true);
+              _sessionId, card?.number, _returnUrl,
+              amount: double.parse(_amountController.text),
+              currency: _currency,
+              callbackUrl: _callbackUrl,
+              cardOnFile: false);
       try {
         AuthenticationApiResponse response =
             await _plugin.initiateAuthentication(
@@ -336,8 +391,17 @@ class CardPaymentState extends State<CardPayment> {
 
       PayerAuthenticationRequestBody payerAuthenticationRequestBody =
           PayerAuthenticationRequestBody(
-              _amountController.text, _currency, card, _orderId!,
-              callbackUrl: _callbackUrl, cardOnFile: true);
+              _sessionId,
+              _orderId,
+              card,
+              DeviceIdentification(
+                language:
+                    (await keySdkLanguage.getPrefData() ?? "AR").toLowerCase(),
+              ),
+              -120,
+              ReturnUrl: _returnUrl,
+              callbackUrl: _callbackUrl,
+              cardOnFile: false);
 
       try {
         AuthenticationApiResponse response = await _plugin.payerAuthentication(
@@ -364,8 +428,12 @@ class CardPaymentState extends State<CardPayment> {
     _formKey.currentState?.save();
 
     PayDirectRequestBody payDirectRequestBody = PayDirectRequestBody(
-        _threeDSecureId!, _orderId!, _amountController.text, _currency, card,
-        callbackUrl: _callbackUrl);
+      _sessionId,
+      _orderId,
+      _threeDSecureId,
+      card,
+      returnUrl: _returnUrl,
+    );
 
     try {
       orderApiResponse =
