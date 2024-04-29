@@ -11,6 +11,7 @@ class PaymentDetail extends StatelessWidget {
 
   final TextEditingController currencyController;
   final TextEditingController callbackUrlController;
+  final TextEditingController returnUrlController;
   final TextEditingController merchantReferenceIdController;
   final Map<String, bool> paymentOptions;
   final Function(String key, bool? value) onCheckChange;
@@ -21,6 +22,7 @@ class PaymentDetail extends StatelessWidget {
     required this.paymentOperations,
     required this.currencyController,
     required this.callbackUrlController,
+    required this.returnUrlController,
     required this.merchantReferenceIdController,
     required this.paymentOptions,
     required this.onCheckChange,
@@ -63,6 +65,24 @@ class PaymentDetail extends StatelessWidget {
             floatingLabelBehavior: FloatingLabelBehavior.auto,
             border: OutlineInputBorder(),
             labelText: "Callback URL",
+            counterText: "",
+          ),
+        ),
+        _verticalSizeBox,
+        Text(
+          "ReturnUrl",
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        _verticalSizeBox,
+        TextFormField(
+          controller: returnUrlController,
+          keyboardType: TextInputType.text,
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(
+            contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
+            border: OutlineInputBorder(),
+            labelText: "Return URL",
             counterText: "",
           ),
         ),

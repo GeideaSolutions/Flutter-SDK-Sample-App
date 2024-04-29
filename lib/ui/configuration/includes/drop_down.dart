@@ -7,6 +7,7 @@ class MyDropDown extends StatelessWidget {
   final String initialValue;
   final List<String> items;
   final String keyPref;
+  final Function(dynamic)? onChange;
 
   const MyDropDown({
     super.key,
@@ -14,6 +15,7 @@ class MyDropDown extends StatelessWidget {
     required this.initialValue,
     required this.items,
     required this.keyPref,
+    this.onChange,
   });
 
   @override
@@ -45,10 +47,18 @@ class MyDropDown extends StatelessWidget {
         return null;
       },
       onChanged: (value) {
-        value.addPrefData(keyPref);
+        if (onChange != null) {
+          onChange!(value);
+        } else {
+          value.addPrefData(keyPref);
+        }
       },
       onSaved: (value) {
-        value.addPrefData(keyPref);
+        if (onChange != null) {
+          onChange!(value);
+        } else {
+          value.addPrefData(keyPref);
+        }
       },
       value: initialValue,
       iconStyleData: const IconStyleData(

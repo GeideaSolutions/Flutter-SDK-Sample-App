@@ -1,7 +1,12 @@
+import 'dart:convert';
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:test_app/storage/app_preference.dart';
 import 'package:test_app/ui/card_payment/card_payment.dart';
 import 'package:test_app/ui/configuration/configuration.dart';
+import 'package:test_app/ui/payment_failed/payment_failed.dart';
+import 'package:test_app/ui/payment_success/payment_success.dart';
 
 class Home extends StatefulWidget {
   final String appName;
@@ -13,6 +18,62 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
+  @override
+  void initState() {
+    super.initState();
+
+    _initDeepLink();
+  }
+
+  _initDeepLink() async {
+    final _appLinks = AppLinks();
+
+    // Get the initial/first link.
+// This is useful when app was terminated (i.e. not started)
+    final uri = await _appLinks.getInitialAppLink();
+    debugPrint("_initDeepLink: $uri");
+
+    if (uri != null && mounted) {
+      if (uri.queryParameters.containsKey("response")) {
+        Map<String, dynamic> jsonResponse =
+            json.decode(uri.queryParameters["response"].toString());
+        if (jsonResponse["responseMessage"] == "Success") {
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => PaymentSuccess(
+                        response: jsonResponse,
+                      )));
+        } else {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => const PaymentFailed()));
+        }
+      }
+    }
+
+// Subscribe to all events when app is started.
+// (Use allStringLinkStream to get it as [String])
+    _appLinks.allUriLinkStream.listen((uri) {
+      debugPrint(
+          "_initDeepLink allUriLinkStream: ${uri.path}, $uri, ${uri.queryParameters}");
+
+      if (uri.queryParameters.containsKey("response")) {
+        Map<String, dynamic> jsonResponse =
+            json.decode(uri.queryParameters["response"].toString());
+        if (jsonResponse["responseMessage"] == "Success") {
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => PaymentSuccess(
+                        response: jsonResponse,
+                      )));
+        } else {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => const PaymentFailed()));
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
