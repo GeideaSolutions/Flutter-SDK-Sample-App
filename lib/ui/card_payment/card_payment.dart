@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geideapay/geideapay.dart';
 import 'package:intl/intl.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../storage/app_preference.dart';
 import 'input_card_view.dart';
 import '../../utils/HexColor.dart';
 import '../../config/globals.dart' as globals;
 
-enum PaymentType { geidea, merchant }
+enum PaymentType { geidea, merchant, meezaQR }
 
 class CardPayment extends StatefulWidget {
   const CardPayment({super.key});
@@ -31,6 +33,7 @@ class CardPaymentState extends State<CardPayment> {
   final TextEditingController _yearController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
   final TextEditingController _cardHolderController = TextEditingController();
+  final TextEditingController _phoneNoController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
 
@@ -57,7 +60,7 @@ class CardPaymentState extends State<CardPayment> {
     _plugin.initialize(
         publicKey: globals.keyMerchantKey ?? "",
         apiPassword: globals.keyMerchantPass ?? "",
-        baseUrl: globals.keyBaseUrl ?? "");
+        serverEnvironment: globals.keyEnv);
 
     _currency = await keyCurrency.getPrefData() ?? "";
     _callbackUrl = await keyCallbackUrl.getPrefData() ?? _callbackUrl;
@@ -185,6 +188,25 @@ class CardPaymentState extends State<CardPayment> {
                               });
                             },
                           ),
+                          ListTile(
+                            title: const Text("Meeza QR"),
+                            leading: Radio(
+                                value: PaymentType.meezaQR,
+                                groupValue: _character,
+                                onChanged: (PaymentType? value) {
+                                  setState(() {
+                                    _character = value;
+                                    value.addPrefData(keyPaymentType);
+                                  });
+                                }),
+                            contentPadding: const EdgeInsets.all(0),
+                            onTap: () {
+                              setState(() {
+                                _character = PaymentType.meezaQR;
+                                PaymentType.meezaQR.addPrefData(keyPaymentType);
+                              });
+                            },
+                          ),
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 500),
                             child: (_character == PaymentType.merchant)
@@ -195,7 +217,29 @@ class CardPaymentState extends State<CardPayment> {
                                     cvvController: _cvvController,
                                     cardHolderController: _cardHolderController,
                                   )
-                                : Container(),
+                                : (_character == PaymentType.meezaQR)
+                                    ? TextFormField(
+                                        controller: _phoneNoController,
+                                        keyboardType: TextInputType.number,
+                                        textInputAction: TextInputAction.done,
+                                        inputFormatters: <TextInputFormatter>[
+                                          MaskTextInputFormatter(
+                                              mask: '###############',
+                                              filter: {"#": RegExp(r'[0-9]')})
+                                        ],
+                                        decoration: const InputDecoration(
+                                            floatingLabelBehavior:
+                                                FloatingLabelBehavior.auto,
+                                            border: OutlineInputBorder(),
+                                            labelText: "Phone Number *"),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter phoneNumber';
+                                          }
+                                          return null;
+                                        },
+                                      )
+                                    : Container(),
                           ),
                         ],
                       ),
@@ -206,6 +250,13 @@ class CardPaymentState extends State<CardPayment> {
                       if (_character == PaymentType.geidea)
                         ElevatedButton(
                           onPressed: () => _payNow(context),
+                          child: const Center(
+                            child: Text("PAY"),
+                          ),
+                        ),
+                      if (_character == PaymentType.meezaQR)
+                        ElevatedButton(
+                          onPressed: () => _payMeezaQRNow(context),
                           child: const Center(
                             child: Text("PAY"),
                           ),
@@ -300,6 +351,47 @@ class CardPaymentState extends State<CardPayment> {
           response.detailedResponseMessage, truncate(response.toString()));
     } catch (e) {
       debugPrint("PayNow: $e");
+      setState(() => _checkoutInProgress = false);
+      _showMessage(e.toString());
+    }
+  }
+
+  _payMeezaQRNow(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+
+    CheckoutOptions checkoutOptions = CheckoutOptions(
+      double.parse((await keyAmount.getPrefData()).toString()),
+      (await keyCurrency.getPrefData()).toString(),
+      merchantReferenceID: await keyMerchantRefId.getPrefData(),
+      textColor:
+          HexColor.fromHex(await keyColorText.getPrefData() ?? "#ffffff"),
+      cardColor:
+          HexColor.fromHex(await keyColorCard.getPrefData() ?? "#ff4d00"),
+      payButtonColor:
+          HexColor.fromHex(await keyColorPayButton.getPrefData() ?? "#ff4d00"),
+      cancelButtonColor: HexColor.fromHex(
+          await keyColorCancelButton.getPrefData() ?? "#878787"),
+      backgroundColor:
+          HexColor.fromHex(await keyColorBG.getPrefData() ?? "#2c2222"),
+      qrConfiguration: QRConfiguration(
+        phoneNumber: _phoneNoController.text,
+        qrTitle: "Mobile Wallet Payment",
+      ),
+    );
+
+    setState(() => _checkoutInProgress = true);
+
+    try {
+      RequestPayApiResponse response = await _plugin.generateQRCodeImage(
+          context: context, checkoutOptions: checkoutOptions);
+      debugPrint('Response = $response');
+
+      setState(() => _checkoutInProgress = false);
+
+      _updateStatus(response.responseDescription.toString(),
+          truncate(response.toString()));
+    } catch (e) {
+      debugPrint("PayMeezaQRNow: $e");
       setState(() => _checkoutInProgress = false);
       _showMessage(e.toString());
     }

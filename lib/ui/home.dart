@@ -116,7 +116,7 @@ class HomeState extends State<Home> {
                 Expanded(
                   child: homeMenu(
                     Icons.credit_card,
-                    "Card Payment",
+                    "Payment",
                     () => Navigator.push(
                       context,
                       MaterialPageRoute(

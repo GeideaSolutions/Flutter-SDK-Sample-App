@@ -1,5 +1,7 @@
 library geideasample.globals;
 
+import 'package:geideapay/geideapay.dart';
+
 String? keyMerchantKey;
 String? keyMerchantPass;
-String? keyBaseUrl = "https://api.merchant.geidea.net";
+ServerEnvironmentModel keyEnv = ServerEnvironmentModel.EGY_PROD();

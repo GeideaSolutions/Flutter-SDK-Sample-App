@@ -1,5 +1,6 @@
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:geideapay/geideapay.dart' as gp;
 import 'package:test_app/ui/configuration/includes/drop_down.dart';
 import '../../storage/app_preference.dart';
 import 'includes/address.dart';
@@ -32,14 +33,8 @@ class ConfigurationState extends State<Configuration> {
     'AuthorizeCapture'
   ];
 
-  final Map<String, String> _baseUrlType = {
-    "Egypt - Production": "https://api.merchant.geidea.net",
-    "Egypt - Preproduction": "https://api-merchant.staging.geidea.net",
-    "UAE - Production": "https://api.merchant.geidea.ae",
-    "UAE - Preproduction": "https://api-merchant.staging.geidea.ae",
-    "KSA - Production": "https://api.ksamerchant.geidea.net",
-    "KSA - Preproduction": "https://api-ksamerchant.staging.geidea.net",
-  };
+  final List<gp.ServerEnvironmentModel> _baseUrlType =
+      gp.ServerEnvironment.environments();
 
   final TextEditingController _merchantKeyController = TextEditingController();
   final TextEditingController _merchantPasswordController =
@@ -343,8 +338,7 @@ class ConfigurationState extends State<Configuration> {
         ),
       ),
       if (globals.keyMerchantKey?.isNotEmpty == true &&
-          globals.keyMerchantPass?.isNotEmpty == true &&
-          globals.keyBaseUrl?.isNotEmpty == true)
+          globals.keyMerchantPass?.isNotEmpty == true)
         ElevatedButton(
           onPressed: () => _saveData(),
           child: Center(
@@ -361,15 +355,12 @@ class ConfigurationState extends State<Configuration> {
         children: [
           MyDropDown(
             hint: "Select environment",
-            initialValue: _baseUrlType.entries
-                .firstWhere(
-                    (element) => element.value == globals.keyBaseUrl.toString(),
-                    orElse: () => _baseUrlType.entries.first)
-                .key,
-            items: _baseUrlType.entries.map((e) => e.key).toList(),
+            initialValue: globals.keyEnv.title,
+            items: _baseUrlType.map((e) => e.title).toList(),
             keyPref: "",
             onChange: (value) {
-              globals.keyBaseUrl = _baseUrlType[value];
+              globals.keyEnv = _baseUrlType
+                  .firstWhere((element) => element.title == value);
             },
           ),
           _verticalSizeBox,
