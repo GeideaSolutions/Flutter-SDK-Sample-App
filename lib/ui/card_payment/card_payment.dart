@@ -382,14 +382,14 @@ class CardPaymentState extends State<CardPayment> {
     setState(() => _checkoutInProgress = true);
 
     try {
-      RequestPayApiResponse response = await _plugin.generateQRCodeImage(
+      OrderApiResponse response = await _plugin.generateQRCodeImage(
           context: context, checkoutOptions: checkoutOptions);
       debugPrint('Response = $response');
 
       setState(() => _checkoutInProgress = false);
 
-      _updateStatus(response.responseDescription.toString(),
-          truncate(response.toString()));
+      _updateStatus(
+          response.detailedResponseMessage ?? response.otherResponse?.title, truncate(response.toString()));
     } catch (e) {
       debugPrint("PayMeezaQRNow: $e");
       setState(() => _checkoutInProgress = false);
