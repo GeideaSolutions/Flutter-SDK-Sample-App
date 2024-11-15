@@ -6,12 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:geideapay/geideapay.dart';
 import 'package:intl/intl.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:test_app/ui/payment_failed/payment_failed.dart';
+import 'package:test_app/ui/payment_success/payment_success.dart';
 import '../../storage/app_preference.dart';
 import 'input_card_view.dart';
 import '../../utils/HexColor.dart';
 import '../../config/globals.dart' as globals;
 
-enum PaymentType { geidea, merchant, meezaQR }
+enum PaymentType { geidea, merchant, meezaQR, hpp }
 
 class CardPayment extends StatefulWidget {
   const CardPayment({super.key});
@@ -189,6 +191,25 @@ class CardPaymentState extends State<CardPayment> {
                             },
                           ),
                           ListTile(
+                            title: const Text("HPP Checkout"),
+                            leading: Radio(
+                                value: PaymentType.hpp,
+                                groupValue: _character,
+                                onChanged: (PaymentType? value) {
+                                  setState(() {
+                                    _character = value;
+                                    value.addPrefData(keyPaymentType);
+                                  });
+                                }),
+                            contentPadding: const EdgeInsets.all(0),
+                            onTap: () {
+                              setState(() {
+                                _character = PaymentType.hpp;
+                                PaymentType.hpp.addPrefData(keyPaymentType);
+                              });
+                            },
+                          ),
+                          ListTile(
                             title: const Text("Meeza QR"),
                             leading: Radio(
                                 value: PaymentType.meezaQR,
@@ -257,6 +278,13 @@ class CardPaymentState extends State<CardPayment> {
                       if (_character == PaymentType.meezaQR)
                         ElevatedButton(
                           onPressed: () => _payMeezaQRNow(context),
+                          child: const Center(
+                            child: Text("PAY"),
+                          ),
+                        ),
+                      if (_character == PaymentType.hpp)
+                        ElevatedButton(
+                          onPressed: () => _payHpp(context),
                           child: const Center(
                             child: Text("PAY"),
                           ),
@@ -349,6 +377,18 @@ class CardPaymentState extends State<CardPayment> {
 
       _updateStatus(
           response.detailedResponseMessage, truncate(response.toString()));
+
+      if (response.responseMessage == "Success") {
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => PaymentSuccess(
+                      response: response.toMap(),
+                    )));
+      } else {
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (context) => const PaymentFailed()));
+      }
     } catch (e) {
       debugPrint("PayNow: $e");
       setState(() => _checkoutInProgress = false);
@@ -382,16 +422,60 @@ class CardPaymentState extends State<CardPayment> {
     setState(() => _checkoutInProgress = true);
 
     try {
-      RequestPayApiResponse response = await _plugin.generateQRCodeImage(
+      OrderApiResponse response = await _plugin.generateQRCodeImage(
           context: context, checkoutOptions: checkoutOptions);
       debugPrint('Response = $response');
 
       setState(() => _checkoutInProgress = false);
 
-      _updateStatus(response.responseDescription.toString(),
+      _updateStatus(
+          response.detailedResponseMessage ?? response.otherResponse?.title,
           truncate(response.toString()));
     } catch (e) {
       debugPrint("PayMeezaQRNow: $e");
+      setState(() => _checkoutInProgress = false);
+      _showMessage(e.toString());
+    }
+  }
+
+  _payHpp(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+
+    CheckoutOptions checkoutOptions = CheckoutOptions(
+      double.parse((await keyAmount.getPrefData()).toString()),
+      (await keyCurrency.getPrefData()).toString(),
+      callbackUrl: await keyCallbackUrl.getPrefData() ?? "",
+      returnUrl: await keyReturnUrl.getPrefData() ?? "",
+      lang: (await keySdkLanguage.getPrefData() ?? "AR").toLowerCase(),
+      merchantReferenceID: await keyMerchantRefId.getPrefData(),
+      textColor:
+          HexColor.fromHex(await keyColorText.getPrefData() ?? "#ffffff"),
+      cardColor:
+          HexColor.fromHex(await keyColorCard.getPrefData() ?? "#ff4d00"),
+      payButtonColor:
+          HexColor.fromHex(await keyColorPayButton.getPrefData() ?? "#ff4d00"),
+      cancelButtonColor: HexColor.fromHex(
+          await keyColorCancelButton.getPrefData() ?? "#878787"),
+      backgroundColor:
+          HexColor.fromHex(await keyColorBG.getPrefData() ?? "#2c2222"),
+      qrConfiguration: QRConfiguration(
+        phoneNumber: _phoneNoController.text,
+        qrTitle: "Mobile Wallet Payment",
+      ),
+    );
+
+    setState(() => _checkoutInProgress = true);
+
+    try {
+      OrderApiResponse response = await _plugin.checkoutHPP(
+          context: context, checkoutOptions: checkoutOptions);
+      debugPrint('Response = $response');
+
+      setState(() => _checkoutInProgress = false);
+
+      _updateStatus(response.responseMessage, truncate(response.toString()));
+    } catch (e) {
+      debugPrint("_payHpp: $e");
       setState(() => _checkoutInProgress = false);
       _showMessage(e.toString());
     }
@@ -622,13 +706,14 @@ class CardPaymentState extends State<CardPayment> {
 
   _showMessage(String message,
       [Duration duration = const Duration(seconds: 4)]) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    scaffoldMessenger.showSnackBar(SnackBar(
       content: Text(message),
       duration: duration,
       action: SnackBarAction(
           label: 'CLOSE',
-          onPressed: () =>
-              ScaffoldMessenger.of(context).removeCurrentSnackBar()),
+          onPressed: () => scaffoldMessenger.removeCurrentSnackBar()),
     ));
   }
 }

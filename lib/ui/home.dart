@@ -30,7 +30,7 @@ class HomeState extends State<Home> {
 
     // Get the initial/first link.
 // This is useful when app was terminated (i.e. not started)
-    final uri = await _appLinks.getInitialAppLink();
+    final uri = await _appLinks.getInitialLink();
     debugPrint("_initDeepLink: $uri");
 
     if (uri != null && mounted) {
@@ -53,7 +53,7 @@ class HomeState extends State<Home> {
 
 // Subscribe to all events when app is started.
 // (Use allStringLinkStream to get it as [String])
-    _appLinks.allUriLinkStream.listen((uri) {
+    _appLinks.uriLinkStream.listen((uri) {
       debugPrint(
           "_initDeepLink allUriLinkStream: ${uri.path}, $uri, ${uri.queryParameters}");
 
