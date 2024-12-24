@@ -33,7 +33,7 @@ dependencies:
   geideapay:
     path: ./../flutter_sdk
 #    git:
-#      url: https://github.com/payorch/flutter_sdk.git
+#      url: https://github.com/GeideaSolutions/Flutter-SDK.git
 #      ref: main # branch name
 
   # The following adds the Cupertino Icons font to your application.
