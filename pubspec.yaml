@@ -31,10 +31,10 @@ dependencies:
     sdk: flutter
 
   geideapay:
-    path: ./../flutter_sdk
-#    git:
-#      url: https://github.com/GeideaSolutions/Flutter-SDK.git
-#      ref: main # branch name
+    # path: D:\GitHub\Extensions\SDK\Geidea\Flutter-SDK
+   git:
+     url: https://github.com/GeideaSolutions/Flutter-SDK.git
+     ref: main # branch name
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
